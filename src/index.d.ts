@@ -16,7 +16,18 @@ export interface IpInformation {
     lat?: number | null; lon?: number | null; offset?: number | null;
     mobile?: boolean | null; proxy?: boolean | null; hosting?: boolean | null;
 }
-export function lookupIp(ip?: string, options?: {
+export interface IpLookupOptions {
     baseURL?: string; timeoutMs?: number; maxResponseBytes?: number;
     signal?: AbortSignal; fetch?: typeof globalThis.fetch;
-}): Promise<{ source: 'nstdata-public-ip-lookup'; requestedIp: string | null; information: IpInformation }>;
+}
+export interface IpLookupResult {
+    source: 'nstdata-public-ip-lookup'; requestedIp: string | null; information: IpInformation;
+    retrievedAt: string; sourceUpdatedAt: null; cached: boolean;
+}
+export function lookupIp(ip?: string, options?: IpLookupOptions): Promise<IpLookupResult>;
+export function createIpLookup(options?: Omit<IpLookupOptions, 'signal'> & {
+    cacheTtlMs?: number; maxCacheEntries?: number;
+}): {
+    lookup(ip?: string, options?: { signal?: AbortSignal }): Promise<IpLookupResult>;
+    clearCache(): void;
+};

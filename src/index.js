@@ -15,7 +15,7 @@ const stringFields = ['continent', 'continentCode', 'country', 'countryCode', 'r
 const numberFields = ['lat', 'lon', 'offset'];
 const booleanFields = ['mobile', 'proxy', 'hosting'];
 
-/** One request; no credentials, retries, redirects, cache or hidden geolocation provider. */
+/** One request without retries, redirects or local caching. */
 export async function lookupIp(ip, { baseURL = 'https://api.nstdata.io', timeoutMs = 10000,
     maxResponseBytes = 1048576, signal, fetch: request = globalThis.fetch } = {}) {
     if (ip !== undefined && (typeof ip !== 'string' || !isIP(ip))) throw new IpLookupError('INVALID_IP');
@@ -72,11 +72,40 @@ export async function lookupIp(ip, { baseURL = 'https://api.nstdata.io', timeout
                 information[field] = data[field];
             }
         }
-        return { source: 'nstdata-public-ip-lookup', requestedIp: ip ?? null, information };
+        return { source: 'nstdata-public-ip-lookup', requestedIp: ip ?? null, information,
+            retrievedAt: new Date().toISOString(), sourceUpdatedAt: null, cached: false };
     } catch (error) {
         if (error instanceof IpLookupError) throw error;
         if (signal?.aborted) throw new IpLookupError('CANCELLED');
         if (deadline.aborted) throw new IpLookupError('TIMEOUT');
         throw new IpLookupError('NETWORK_ERROR');
     }
+}
+
+/** Optional process-local cache; omitted-IP queries always reach the service. */
+export function createIpLookup({ cacheTtlMs = 0, maxCacheEntries = 100, ...options } = {}) {
+    if (!Number.isInteger(cacheTtlMs) || cacheTtlMs < 0 || cacheTtlMs > 2147483647 ||
+        !Number.isSafeInteger(maxCacheEntries) || maxCacheEntries < 1) throw new IpLookupError('INVALID_CONFIG');
+    const entries = new Map();
+    return {
+        async lookup(ip, { signal } = {}) {
+            if (signal !== undefined && !(signal instanceof AbortSignal)) throw new IpLookupError('INVALID_CONFIG');
+            if (signal?.aborted) throw new IpLookupError('CANCELLED');
+            const entry = entries.get(ip);
+            if (entry && performance.now() < entry.expiresAt) {
+                entries.delete(ip);
+                entries.set(ip, entry);
+                return { ...structuredClone(entry.result), cached: true };
+            }
+            entries.delete(ip);
+            const result = await lookupIp(ip, { ...options, signal });
+            if (ip !== undefined && cacheTtlMs > 0) {
+                entries.delete(ip);
+                if (entries.size >= maxCacheEntries) entries.delete(entries.keys().next().value);
+                entries.set(ip, { result: structuredClone(result), expiresAt: performance.now() + cacheTtlMs });
+            }
+            return result;
+        },
+        clearCache() { entries.clear(); },
+    };
 }

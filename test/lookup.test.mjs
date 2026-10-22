@@ -5,7 +5,7 @@ import { once } from 'node:events';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 const installed = process.env.NSTDATA_IP_LOOKUP_INSTALLED === '1';
-const { lookupIp, IpLookupError } = await import(installed ? '@nstdata-ai/ip-lookup' : '../src/index.js');
+const { lookupIp, createIpLookup, IpLookupError } = await import(installed ? '@nstdata-ai/ip-lookup' : '../src/index.js');
 const cliPath = fileURLToPath(new URL(installed ? '../node_modules/.bin/nstdata-ip-lookup' : '../src/cli.js', import.meta.url));
 const envelope = data => ({ code: 200, err: false, data });
 const valid = { status: 'success', query: '1.1.1.1', country: 'Example', lat: 0, proxy: false };
@@ -33,6 +33,105 @@ test('IPv6 is encoded once and current endpoint omits the target', async () => {
         } });
         assert.equal(result.requestedIp, ip ?? null);
     }
+});
+
+test('retrieval time is recorded without inventing a source update time', async () => {
+    const before = Date.now();
+    const result = await lookupIp('1.1.1.1', { fetch: fixture(envelope(valid)) });
+    assert.ok(Date.parse(result.retrievedAt) >= before && Date.parse(result.retrievedAt) <= Date.now());
+    assert.equal(result.sourceUpdatedAt, null);
+    assert.equal(result.cached, false);
+});
+
+test('optional cache isolates returned objects and expires at the TTL boundary', async t => {
+    let now = 0, calls = 0;
+    t.mock.method(performance, 'now', () => now);
+    const client = createIpLookup({ cacheTtlMs: 100, fetch: async () => {
+        calls++;
+        return new Response(JSON.stringify(envelope(valid)));
+    } });
+    const first = await client.lookup('1.1.1.1');
+    first.information.country = 'caller mutation';
+    now = 99;
+    const hit = await client.lookup('1.1.1.1');
+    assert.equal(hit.cached, true);
+    assert.equal(hit.information.country, 'Example');
+    assert.equal(hit.retrievedAt, first.retrievedAt);
+    hit.information.country = 'cache hit mutation';
+    assert.equal((await client.lookup('1.1.1.1')).information.country, 'Example');
+    assert.equal(calls, 1);
+    now = 100;
+    assert.equal((await client.lookup('1.1.1.1')).cached, false);
+    assert.equal(calls, 2);
+    client.clearCache();
+    await client.lookup('1.1.1.1');
+    assert.equal(calls, 3);
+});
+
+test('cache capacity evicts least recently used IPs and stays private to each client', async () => {
+    const seen = [];
+    const fetch = async url => {
+        const query = url.searchParams.get('ipOrHost');
+        seen.push(query);
+        return new Response(JSON.stringify(envelope({ ...valid, query })));
+    };
+    const client = createIpLookup({ cacheTtlMs: 60000, maxCacheEntries: 2, fetch });
+    await client.lookup('1.1.1.1');
+    await client.lookup('8.8.8.8');
+    await client.lookup('1.1.1.1');
+    await client.lookup('2001:4860:4860::8888');
+    assert.equal((await client.lookup('1.1.1.1')).cached, true);
+    assert.equal((await client.lookup('8.8.8.8')).cached, false);
+    assert.deepEqual(seen, ['1.1.1.1', '8.8.8.8', '2001:4860:4860::8888', '8.8.8.8']);
+    const other = createIpLookup({ cacheTtlMs: 60000, fetch });
+    assert.equal((await other.lookup('1.1.1.1')).cached, false);
+    assert.equal(seen.length, 5);
+});
+
+test('default cache is off and current-IP queries always bypass an enabled cache', async () => {
+    let calls = 0;
+    const fetch = async () => { calls++; return new Response(JSON.stringify(envelope(valid))); };
+    const uncached = createIpLookup({ fetch });
+    await uncached.lookup('1.1.1.1');
+    assert.equal((await uncached.lookup('1.1.1.1')).cached, false);
+    const cached = createIpLookup({ cacheTtlMs: 60000, fetch });
+    await cached.lookup();
+    assert.equal((await cached.lookup()).cached, false);
+    assert.equal(calls, 4);
+});
+
+test('cache never stores failures or serves expired data after a service failure', async t => {
+    let calls = 0, now = 0;
+    t.mock.method(performance, 'now', () => now);
+    const client = createIpLookup({ cacheTtlMs: 100, fetch: async () => {
+        calls++;
+        return calls === 2 ? new Response(JSON.stringify(envelope(valid))) : new Response('', { status: 429 });
+    } });
+    await assert.rejects(client.lookup('1.1.1.1'), { code: 'HTTP_ERROR', statusCode: 429 });
+    assert.equal((await client.lookup('1.1.1.1')).cached, false);
+    now = 100;
+    await assert.rejects(client.lookup('1.1.1.1'), { code: 'HTTP_ERROR', statusCode: 429 });
+    await assert.rejects(client.lookup('1.1.1.1'), { code: 'HTTP_ERROR', statusCode: 429 });
+    assert.equal(calls, 4);
+});
+
+test('cache configuration and cancellation are checked before serving a hit', async () => {
+    for (const cacheTtlMs of [-1, 0.1, NaN, Infinity, '100', 2147483648]) {
+        assert.throws(() => createIpLookup({ cacheTtlMs }), { code: 'INVALID_CONFIG' });
+    }
+    for (const maxCacheEntries of [0, -1, 0.1, NaN, Infinity, '100']) {
+        assert.throws(() => createIpLookup({ maxCacheEntries }), { code: 'INVALID_CONFIG' });
+    }
+    let calls = 0;
+    const client = createIpLookup({ cacheTtlMs: 60000, fetch: async () => {
+        calls++;
+        return new Response(JSON.stringify(envelope(valid)));
+    } });
+    await client.lookup('1.1.1.1');
+    await assert.rejects(client.lookup('1.1.1.1', { signal: AbortSignal.abort() }), { code: 'CANCELLED' });
+    await assert.rejects(client.lookup('1.1.1.1', { signal: null }), { code: 'INVALID_CONFIG' });
+    await assert.rejects(client.lookup('not-an-ip'), { code: 'INVALID_IP' });
+    assert.equal(calls, 1);
 });
 
 test('input and pre-cancellation fail without calls', async () => {

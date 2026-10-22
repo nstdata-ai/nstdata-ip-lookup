@@ -2,6 +2,8 @@
 
 ## 1.0.0 — Unreleased
 
+- Optional bounded per-client memory cache with explicit TTL, least-recently-used eviction, independent results and clearing; disabled by default and bypassed for current-IP queries.
+- Client retrieval timestamps, explicit unknown source update time and cache-hit metadata; document data provenance and retention limits.
 - Single IPv4/IPv6 or service-observed request-IP query using the existing public Nstdata endpoint.
 - Zero-dependency ESM library, declarations and CLI with explicit structured results/exit codes.
 - Whole-call cancellation/deadline, decoded-body cap and safe errors; no retries or redirects.
