@@ -14,11 +14,13 @@
   },
   "files": [
     "src",
+    "docs",
     "README.md",
     "README_zh.md",
     "LICENSE",
     "CHANGELOG.md",
-    "CONTRIBUTING.md"
+    "CONTRIBUTING.md",
+    "SECURITY.md"
   ],
   "engines": {
     "node": "^22.18.0 || ^24.0.0"

@@ -15,9 +15,15 @@ const stringFields = ['continent', 'continentCode', 'country', 'countryCode', 'r
 const numberFields = ['lat', 'lon', 'offset'];
 const booleanFields = ['mobile', 'proxy', 'hosting'];
 
+function optionsObject(options) {
+    if (options === null || typeof options !== 'object' || Array.isArray(options)) throw new IpLookupError('INVALID_CONFIG');
+    return options;
+}
+
 /** One request without retries, redirects or local caching. */
-export async function lookupIp(ip, { baseURL = 'https://api.nstdata.io', timeoutMs = 10000,
-    maxResponseBytes = 1048576, signal, fetch: request = globalThis.fetch } = {}) {
+export async function lookupIp(ip, options = {}) {
+    const { baseURL = 'https://api.nstdata.io', timeoutMs = 10000,
+        maxResponseBytes = 1048576, signal, fetch: request = globalThis.fetch } = optionsObject(options);
     if (ip !== undefined && (typeof ip !== 'string' || !isIP(ip))) throw new IpLookupError('INVALID_IP');
     let base;
     try { base = new URL(baseURL); } catch { throw new IpLookupError('INVALID_CONFIG'); }
@@ -83,12 +89,14 @@ export async function lookupIp(ip, { baseURL = 'https://api.nstdata.io', timeout
 }
 
 /** Optional process-local cache; omitted-IP queries always reach the service. */
-export function createIpLookup({ cacheTtlMs = 0, maxCacheEntries = 100, ...options } = {}) {
+export function createIpLookup(config = {}) {
+    const { cacheTtlMs = 0, maxCacheEntries = 100, ...options } = optionsObject(config);
     if (!Number.isInteger(cacheTtlMs) || cacheTtlMs < 0 || cacheTtlMs > 2147483647 ||
         !Number.isSafeInteger(maxCacheEntries) || maxCacheEntries < 1) throw new IpLookupError('INVALID_CONFIG');
     const entries = new Map();
     return {
-        async lookup(ip, { signal } = {}) {
+        async lookup(ip, lookupOptions = {}) {
+            const { signal } = optionsObject(lookupOptions);
             if (signal !== undefined && !(signal instanceof AbortSignal)) throw new IpLookupError('INVALID_CONFIG');
             if (signal?.aborted) throw new IpLookupError('CANCELLED');
             const entry = entries.get(ip);

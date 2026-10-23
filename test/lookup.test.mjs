@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';
-import { test } from 'node:test';
+import { beforeEach, test } from 'node:test';
 import http from 'node:http';
 import { once } from 'node:events';
 import { spawn } from 'node:child_process';
@@ -14,6 +14,16 @@ const fixture = data => async (_url, init) => {
     assert.deepEqual(init.headers, { Accept: 'application/json' });
     return new Response(JSON.stringify(data));
 };
+
+const nativeFetch = globalThis.fetch;
+beforeEach(t => {
+    t.mock.method(globalThis, 'fetch', (url, init) => {
+        const target = new URL(url);
+        assert.equal(target.protocol, 'http:', 'Offline tests must not access external services');
+        assert.equal(target.hostname, '127.0.0.1', 'Offline tests must use the loopback fixture');
+        return nativeFetch(url, init);
+    });
+});
 
 test('query uses public route, preserves unknown/false/zero fields and drops extras', async () => {
     const result = await lookupIp('1.1.1.1', { fetch: async (url, init) => {
@@ -141,6 +151,24 @@ test('input and pre-cancellation fail without calls', async () => {
         await assert.rejects(lookupIp('1.1.1.1', { ...options, fetch }), { code: 'INVALID_CONFIG' });
     }
     await assert.rejects(lookupIp('1.1.1.1', { fetch, signal: AbortSignal.abort() }), { code: 'CANCELLED' });
+});
+
+test('malformed option containers fail consistently at all public boundaries without requests', async t => {
+    let calls = 0;
+    t.mock.method(globalThis, 'fetch', async () => {
+        calls++;
+        return new Response(JSON.stringify(envelope(valid)));
+    });
+    const client = createIpLookup();
+    for (const options of [null, false, 1, 'invalid-options', [], () => {}]) {
+        await assert.rejects(lookupIp('1.1.1.1', options), error =>
+            error instanceof IpLookupError && error.code === 'INVALID_CONFIG');
+        assert.throws(() => createIpLookup(options), error =>
+            error instanceof IpLookupError && error.code === 'INVALID_CONFIG');
+        await assert.rejects(client.lookup('1.1.1.1', options), error =>
+            error instanceof IpLookupError && error.code === 'INVALID_CONFIG');
+    }
+    assert.equal(calls, 0);
 });
 
 test('HTTP/auth/rate/redirect errors expose status but no raw body and no retry', async () => {
@@ -278,6 +306,6 @@ test('controlled body-phase deadline and cancellation release the reader and nat
         await closed;
         assert.equal(calls, 1);
         assert.equal(response.body.locked, false);
-        t.mock.reset();
+        AbortSignal.timeout.mock.restore();
     }
 });

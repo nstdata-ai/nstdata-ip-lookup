@@ -24,6 +24,6 @@ Preserve actual provider fields, null/false/zero and source attribution.
 
 Endpoint changes need public source/documentation evidence; do not invent data precision or call a real service in CI.
 
-Package checks install the tarball outside the source tree with an empty npm cache, exercise the public import and installed CLI using the same offline regressions, and compile a consumer against the exported declarations. No real lookup service is contacted.
+Package checks install the tarball outside the source tree with an empty npm cache, verify the exact installed files, run regressions and bilingual examples, and compile the exported declarations. Pass an existing tarball after `npm run check:package --` to check that fixed archive. Tests restrict native fetch to loopback; synthetic fetch handles other fixtures. No real lookup service is contacted.
 
-Publication and remote writes require explicit authorization.
+Report vulnerabilities through the [security policy](SECURITY.md). Publication and remote writes require explicit authorization.

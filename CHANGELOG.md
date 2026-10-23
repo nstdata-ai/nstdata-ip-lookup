@@ -2,6 +2,9 @@
 
 ## 1.0.0 — Unreleased
 
+- Normalize invalid option containers to `INVALID_CONFIG` at all public entry points.
+- Add bilingual CLI, result, request, cache and error guides; verify installed examples.
+
 - Optional bounded per-client memory cache with explicit TTL, least-recently-used eviction, independent results and clearing; disabled by default and bypassed for current-IP queries.
 - Client retrieval timestamps, explicit unknown source update time and cache-hit metadata; document data provenance and retention limits.
 - Single IPv4/IPv6 or service-observed request-IP query using the existing public Nstdata endpoint.
