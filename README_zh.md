@@ -12,10 +12,10 @@
 
 ## 安装
 
-需要 Node.js 22.x 的 22.18+ 或 24.x。版本 `1.0.0` 尚未发布。
+需要 Node.js 22.x 的 22.18+ 或 24.x。
 
 ```sh
-npm install @nstdata-ai/ip-lookup@1.0.0
+npm install @nstdata-ai/ip-lookup
 ```
 
 ## CLI
@@ -30,11 +30,23 @@ npx --no-install nstdata-ip-lookup --current
 
 ## 库调用
 
-```js
-import { lookupIp } from '@nstdata-ai/ip-lookup';
+保存为 `lookup.mjs`：
 
-const result = await lookupIp('1.1.1.1');
-console.log(result.information);
+```js
+import { lookupIp, IpLookupError } from '@nstdata-ai/ip-lookup';
+
+try {
+    const result = await lookupIp('1.1.1.1');
+    console.log(result.information);
+} catch (error) {
+    if (!(error instanceof IpLookupError)) throw error;
+    console.error({ code: error.code });
+    process.exitCode = 1;
+}
+```
+
+```sh
+node lookup.mjs
 ```
 
 查询会访问 Nstdata。当前 IP 可能受代理或转发影响；地域及代理标记是供应商估计。代码的 MIT 许可不授予返回数据的使用权。

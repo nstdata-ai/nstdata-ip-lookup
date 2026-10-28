@@ -19,7 +19,7 @@ try {
     assert.equal(manifest.version, lock.packages[''].version);
     assert.equal(manifest.dependencies, undefined);
     const guides = ['README.md', 'README_zh.md'].map(name => readFileSync(join(root, name), 'utf8'));
-    for (const guide of guides) assert.ok(guide.includes(`npm install @nstdata-ai/ip-lookup@${manifest.version}`), 'README version mismatch');
+    for (const guide of guides) assert.ok(guide.split('\n').includes('npm install @nstdata-ai/ip-lookup'), 'README installation command mismatch');
     assert.deepEqual(...guides.map(guide => [...guide.matchAll(/```sh\n([\s\S]*?)```/g)].map(match => match[1])));
     assert.deepEqual(...guides.map(guide => [...guide.matchAll(/```js\n([\s\S]*?)```/g)].map(match => match[1])));
     const programs = guides.map(guide => [...guide.matchAll(/```js\n([\s\S]*?)```/g)].map(match => match[1]));
@@ -28,7 +28,7 @@ try {
     assert.deepEqual(...featurePrograms);
     assert.equal(programs[0].length, 1);
     assert.equal(featurePrograms[0].length, 1);
-    assert.ok(readFileSync(join(root, 'CHANGELOG.md'), 'utf8').includes(`## ${manifest.version} — Unreleased`), 'CHANGELOG version mismatch');
+    assert.ok(readFileSync(join(root, 'CHANGELOG.md'), 'utf8').split('\n').includes(`## ${manifest.version}`), 'CHANGELOG version mismatch');
     const [pack] = JSON.parse(npm(['pack', '--json', '--ignore-scripts', '--pack-destination', temp], root));
     assert.equal(pack.name, '@nstdata-ai/ip-lookup');
     assert.equal(pack.version, manifest.version);
@@ -83,6 +83,8 @@ try {
         writeFileSync(join(temp, 'example.mjs'), `
 import assert from 'node:assert/strict';
 let calls = 0;
+const outputs = [];
+console.log = value => outputs.push(value);
 globalThis.fetch = async (url, init) => {
     calls++;
     assert.equal(url.toString(), 'https://api.nstdata.io/api/v2/public/utility/ip-lookup?ipOrHost=1.1.1.1');
@@ -93,7 +95,7 @@ globalThis.fetch = async (url, init) => {
 };
 ${program}
 assert.equal(calls, 1);
-${index === 0 ? "assert.equal(result.information.query, '1.1.1.1');" : 'assert.equal(first.cached, false); assert.equal(second.cached, true);'}
+${index === 0 ? "assert.equal(outputs[0].query, '1.1.1.1');" : 'assert.equal(first.cached, false); assert.equal(second.cached, true);'}
 `);
         execFileSync(process.execPath, ['example.mjs'], { cwd: temp, timeout: 10000, stdio: 'inherit' });
     }

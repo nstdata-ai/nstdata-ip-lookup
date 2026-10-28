@@ -1,6 +1,6 @@
 # Changelog
 
-## 1.0.0 — Unreleased
+## 1.0.0
 
 - Normalize invalid option containers to `INVALID_CONFIG` at all public entry points.
 - Add bilingual CLI, result, request, cache and error guides; verify installed examples.

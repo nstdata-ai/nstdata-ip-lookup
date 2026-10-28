@@ -24,7 +24,7 @@
 | `--timeout <milliseconds>` | 正整数毫秒期限，最大2147483647，默认10000。 |
 | `--help`、`-h` | 输出用法，不发起查询。 |
 
-成功向 stdout 输出一条 JSON 结果；失败向 stderr 输出 `{ "error": { "code": "…" } }`，并提供可用的 `statusCode`／`apiCode`。退出码：0成功、1服务／网络失败、2输入／配置错误。环境变量 `NSTDATA_IP_LOOKUP_BASE_URL` 可修改 CLI 的服务地址。
+成功向 stdout 输出一条 JSON 结果；失败向 stderr 输出 `{ "error": { "code": "…" } }`，并提供可用的 `statusCode`／`apiCode`。退出码：0成功、1服务／网络失败、2输入／配置错误。环境变量 `NSTDATA_IP_LOOKUP_BASE_URL` 仅供测试等场景覆盖 API 地址，普通使用无需设置。
 
 ## 结果
 

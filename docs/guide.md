@@ -24,7 +24,7 @@ Choose exactly one of `--ip <address>` and `--current`.
 | `--timeout <milliseconds>` | Positive integer deadline, up to 2147483647; default 10000. |
 | `--help`, `-h` | Print usage without a lookup. |
 
-Success writes one JSON result to stdout. Failure writes `{ "error": { "code": "…" } }` to stderr, with available `statusCode` / `apiCode`. Exit codes: 0 success, 1 service/network failure, 2 input/configuration error. `NSTDATA_IP_LOOKUP_BASE_URL` changes the CLI service base URL.
+Success writes one JSON result to stdout. Failure writes `{ "error": { "code": "…" } }` to stderr, with available `statusCode` / `apiCode`. Exit codes: 0 success, 1 service/network failure, 2 input/configuration error. `NSTDATA_IP_LOOKUP_BASE_URL` optionally overrides the CLI API origin for testing; normally leave it unset.
 
 ## Result
 

@@ -12,10 +12,10 @@ A Node.js library and CLI for IP information through Nstdata. No API key or runt
 
 ## Install
 
-Requires Node.js 22.18+ in the 22.x line, or Node.js 24.x. Version `1.0.0` is not yet published.
+Requires Node.js 22.18+ in the 22.x line, or Node.js 24.x.
 
 ```sh
-npm install @nstdata-ai/ip-lookup@1.0.0
+npm install @nstdata-ai/ip-lookup
 ```
 
 ## CLI
@@ -30,11 +30,23 @@ Successful queries print JSON. `--help` runs without a network request. See the 
 
 ## Library
 
-```js
-import { lookupIp } from '@nstdata-ai/ip-lookup';
+Save as `lookup.mjs`:
 
-const result = await lookupIp('1.1.1.1');
-console.log(result.information);
+```js
+import { lookupIp, IpLookupError } from '@nstdata-ai/ip-lookup';
+
+try {
+    const result = await lookupIp('1.1.1.1');
+    console.log(result.information);
+} catch (error) {
+    if (!(error instanceof IpLookupError)) throw error;
+    console.error({ code: error.code });
+    process.exitCode = 1;
+}
+```
+
+```sh
+node lookup.mjs
 ```
 
 Queries contact Nstdata. Current-IP results can reflect proxies or forwarding; location and proxy flags are provider estimates. The code's MIT license does not grant rights to returned data.
