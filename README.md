@@ -10,25 +10,49 @@ A Node.js library and CLI for IP information through Nstdata. No API key or runt
 | Current IP | The address observed by the service for the request. |
 | Optional in-memory cache | Bounded per-client TTL/LRU cache for explicit IP queries; disabled by default. |
 
-## Install
+## Requirements
 
-Requires Node.js 22.18+ in the 22.x line, or Node.js 24.x.
+Node.js 22.18+ in the 22.x line, or Node.js 24.x, with npm on PATH.
+
+## CLI
+
+### Run without a project
+
+Run from any directory; no project installation is required:
+
+```sh
+npx --yes --package @nstdata-ai/ip-lookup@1.0.0 nstdata-ip-lookup --ip 1.1.1.1
+npx --yes --package @nstdata-ai/ip-lookup@1.0.0 nstdata-ip-lookup --current
+```
+
+Inspect usage or the version without submitting an IP query:
+
+```sh
+npx --yes --package @nstdata-ai/ip-lookup@1.0.0 nstdata-ip-lookup --help
+npx --yes --package @nstdata-ai/ip-lookup@1.0.0 nstdata-ip-lookup --version
+```
+
+`npx` may download the package. The CLI's `--help` and `--version` do not contact the lookup service.
+
+### Install a global command
+
+For repeated use from any directory:
+
+```sh
+npm install --global @nstdata-ai/ip-lookup
+nstdata-ip-lookup --current
+nstdata-ip-lookup --ip 2001:4860:4860::8888
+```
+
+Successful queries print JSON. See the [CLI options and exit codes](docs/guide.md#cli).
+
+## Library
+
+Install in your Node.js project:
 
 ```sh
 npm install @nstdata-ai/ip-lookup
 ```
-
-## CLI
-
-```sh
-npx --no-install nstdata-ip-lookup --ip 1.1.1.1
-npx --no-install nstdata-ip-lookup --ip 2001:4860:4860::8888
-npx --no-install nstdata-ip-lookup --current
-```
-
-Successful queries print JSON. `--help` runs without a network request. See the [CLI options and exit codes](docs/guide.md#cli).
-
-## Library
 
 Save as `lookup.mjs`:
 

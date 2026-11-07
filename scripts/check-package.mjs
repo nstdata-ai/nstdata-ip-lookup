@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import { join, dirname, resolve, sep } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { createRequire } from 'node:module';
+import { checkDocumentedCommands } from './check-documentation.mjs';
 
 const root = fileURLToPath(new URL('..', import.meta.url));
 const require = createRequire(import.meta.url);
@@ -14,7 +15,7 @@ const temp = mkdtempSync(join(tmpdir(), 'nstdata-ip-package-'));
 try {
     const manifest = JSON.parse(readFileSync(join(root, 'package.json'), 'utf8'));
     const lock = JSON.parse(readFileSync(join(root, 'package-lock.json'), 'utf8'));
-    assert.equal(manifest.version, '1.0.0');
+    assert.match(manifest.version, /^(0|[1-9]\d*)\.(0|[1-9]\d*)\.(0|[1-9]\d*)$/);
     assert.equal(manifest.version, lock.version);
     assert.equal(manifest.version, lock.packages[''].version);
     assert.equal(manifest.dependencies, undefined);
@@ -72,6 +73,7 @@ try {
     assert.match(execFileSync(bin, ['--help'], { cwd: temp, env: { PATH: dirname(process.execPath) }, encoding: 'utf8', timeout: 10000 }), /Usage: nstdata-ip-lookup/);
     mkdirSync(join(temp, 'test'));
     copyFileSync(join(root, 'test/lookup.test.mjs'), join(temp, 'test/lookup.test.mjs'));
+    copyFileSync(join(root, 'test/network-guard.cjs'), join(temp, 'test/network-guard.cjs'));
     execFileSync(process.execPath, ['--test', '--test-reporter=tap', 'test/lookup.test.mjs'], {
         cwd: temp, env: { NSTDATA_IP_LOOKUP_INSTALLED: '1' }, timeout: 20000, stdio: 'inherit',
     });
@@ -99,5 +101,6 @@ ${index === 0 ? "assert.equal(outputs[0].query, '1.1.1.1');" : 'assert.equal(fir
 `);
         execFileSync(process.execPath, ['example.mjs'], { cwd: temp, timeout: 10000, stdio: 'inherit' });
     }
-    console.log(`PASS: ${pack.files.length} exact package files; empty-cache offline install, public package import/types, installed CLI, bilingual examples and synthetic/loopback regressions`);
+    const commands = await checkDocumentedCommands({ root, archive, manifest, files: required });
+    console.log(`PASS: ${pack.files.length} exact package files; empty-cache offline install, public package import/types, installed CLI, bilingual examples, ${commands} documented CLI/install commands and synthetic/loopback regressions`);
 } finally { rmSync(temp, { recursive: true, force: true }); }

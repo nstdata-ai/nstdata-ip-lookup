@@ -15,7 +15,13 @@ Inputs are literal IPv4 or IPv6 addresses. Hostnames, URLs and blank strings are
 
 ## CLI
 
-Choose exactly one of `--ip <address>` and `--current`.
+For one-shot or global installation, see [CLI setup](../README.md#cli). After installing the package in a project, use its local command:
+
+```sh
+npx --no-install nstdata-ip-lookup --ip 1.1.1.1
+```
+
+Choose exactly one of `--ip <address>` and `--current` for a query. Use an information option on its own.
 
 | Option | Meaning |
 |---|---|
@@ -23,8 +29,9 @@ Choose exactly one of `--ip <address>` and `--current`.
 | `--current` | Query the address observed by the service; not necessarily the machine's direct public IP. |
 | `--timeout <milliseconds>` | Positive integer deadline, up to 2147483647; default 10000. |
 | `--help`, `-h` | Print usage without a lookup. |
+| `--version` | Print the package version without a lookup. |
 
-Success writes one JSON result to stdout. Failure writes `{ "error": { "code": "…" } }` to stderr, with available `statusCode` / `apiCode`. Exit codes: 0 success, 1 service/network failure, 2 input/configuration error. `NSTDATA_IP_LOOKUP_BASE_URL` optionally overrides the CLI API origin for testing; normally leave it unset.
+Success writes one JSON result to stdout. Failure writes `{ "error": { "code": "…" } }` to stderr, with available `statusCode` / `apiCode`. Exit codes: 0 success or information output, 1 service/network failure, 2 input/configuration error. No arguments or mixed information/query options are input errors. `NSTDATA_IP_LOOKUP_BASE_URL` optionally overrides the CLI API origin for testing; normally leave it unset.
 
 ## Result
 

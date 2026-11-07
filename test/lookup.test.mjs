@@ -4,7 +4,11 @@ import http from 'node:http';
 import { once } from 'node:events';
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
+import { readFileSync } from 'node:fs';
+import net from 'node:net';
+import './network-guard.cjs';
 const installed = process.env.NSTDATA_IP_LOOKUP_INSTALLED === '1';
+const version = JSON.parse(readFileSync(new URL(installed ? '../node_modules/@nstdata-ai/ip-lookup/package.json' : '../package.json', import.meta.url), 'utf8')).version;
 const { lookupIp, createIpLookup, IpLookupError } = await import(installed ? '@nstdata-ai/ip-lookup' : '../src/index.js');
 const cliPath = fileURLToPath(new URL(installed ? '../node_modules/.bin/nstdata-ip-lookup' : '../src/cli.js', import.meta.url));
 const envelope = data => ({ code: 200, err: false, data });
@@ -16,6 +20,11 @@ const fixture = data => async (_url, init) => {
 };
 
 const nativeFetch = globalThis.fetch;
+test('offline test guard rejects public sockets before any connection', () => {
+    const socket = new net.Socket();
+    assert.throws(() => socket.connect({ host: '203.0.113.1', port: 443 }), { code: 'TEST_NETWORK_BLOCKED' });
+    socket.destroy();
+});
 beforeEach(t => {
     t.mock.method(globalThis, 'fetch', (url, init) => {
         const target = new URL(url);
@@ -212,7 +221,8 @@ test('native fetch honors a real deadline and caller cancellation', { timeout: 1
 });
 
 async function cli(args, env = {}) {
-    const child = spawn(process.execPath, [cliPath, ...args], { env });
+    const guard = fileURLToPath(new URL('./network-guard.cjs', import.meta.url));
+    const child = spawn(process.execPath, [cliPath, ...args], { env: { ...env, NODE_OPTIONS: `--require=${JSON.stringify(guard)}` } });
     let stdout = '', stderr = '';
     child.stdout.on('data', x => stdout += x); child.stderr.on('data', x => stderr += x);
     const [code] = await once(child, 'close');
@@ -221,6 +231,17 @@ async function cli(args, env = {}) {
 
 test('CLI help and invalid usage do not require a service', async () => {
     assert.equal((await cli(['--help'])).code, 0);
+    assert.equal((await cli(['-h'])).code, 0);
+    const reported = await cli(['--version']);
+    assert.equal(reported.code, 0);
+    assert.equal(reported.stdout, version + '\n');
+    assert.equal(reported.stderr, '');
+    for (const args of [['--help', '--current'], ['--version', '--ip', '1.1.1.1'], ['--version', '--help']]) {
+        const result = await cli(args);
+        assert.equal(result.code, 2);
+        assert.equal(result.stdout, '');
+        assert.deepEqual(JSON.parse(result.stderr), { error: { code: 'USAGE' } });
+    }
     assert.equal((await cli([])).code, 2);
     assert.equal((await cli(['--ip', 'invalid'])).code, 2);
 });

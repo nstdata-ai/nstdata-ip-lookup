@@ -2,6 +2,7 @@
 
 ## 1.0.0
 
+- Add standalone CLI installation, detailed help and a network-free version command.
 - Normalize invalid option containers to `INVALID_CONFIG` at all public entry points.
 - Add bilingual CLI, result, request, cache and error guides; verify installed examples.
 

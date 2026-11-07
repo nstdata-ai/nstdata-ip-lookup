@@ -15,7 +15,13 @@
 
 ## CLI
 
-`--ip <address>` 与 `--current` 二选一。
+独立运行或全局安装方法见[CLI 接入](../README_zh.md#cli)。在项目中安装后，可运行该项目的本地命令：
+
+```sh
+npx --no-install nstdata-ip-lookup --ip 1.1.1.1
+```
+
+查询时，`--ip <address>` 与 `--current` 二选一；查看用法或版本时，单独使用对应选项。
 
 | 参数 | 含义 |
 |---|---|
@@ -23,8 +29,9 @@
 | `--current` | 查询服务端观测到的地址，不一定是本机直接公网出口。 |
 | `--timeout <milliseconds>` | 正整数毫秒期限，最大2147483647，默认10000。 |
 | `--help`、`-h` | 输出用法，不发起查询。 |
+| `--version` | 输出软件包版本，不发起查询。 |
 
-成功向 stdout 输出一条 JSON 结果；失败向 stderr 输出 `{ "error": { "code": "…" } }`，并提供可用的 `statusCode`／`apiCode`。退出码：0成功、1服务／网络失败、2输入／配置错误。环境变量 `NSTDATA_IP_LOOKUP_BASE_URL` 仅供测试等场景覆盖 API 地址，普通使用无需设置。
+成功向 stdout 输出一条 JSON 结果；失败向 stderr 输出 `{ "error": { "code": "…" } }`，并提供可用的 `statusCode`／`apiCode`。退出码：0成功或信息输出、1服务／网络失败、2输入／配置错误。未传参数、信息选项与查询选项混用均属于输入错误。环境变量 `NSTDATA_IP_LOOKUP_BASE_URL` 仅供测试等场景覆盖 API 地址，普通使用无需设置。
 
 ## 结果
 

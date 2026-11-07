@@ -34,5 +34,13 @@
   "devDependencies": {
     "typescript": "5.9.3",
     "@types/node": "22.18.0"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nstdata-ai/nstdata-ip-lookup.git"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
   }
 }
