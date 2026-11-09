@@ -39,7 +39,7 @@ Success writes one JSON result to stdout. Failure writes `{ "error": { "code": "
 |---|---|
 | `source` | `nstdata-public-ip-lookup`: identifies the Nstdata interface, not a downstream dataset. |
 | `requestedIp` | Original input string, or `null` for a current-IP query. |
-| `information.query` | Valid IP returned by the service. |
+| `information.query` | Valid IP returned by the service; an explicit query must match this address. Equivalent IPv6 spellings are accepted. |
 | `information` optional fields | Only fields present in the response; missing fields are omitted and `null`, `false`, `0` are preserved. |
 | `retrievedAt` | UTC time after the client read and validated the response; unchanged on cache hits. |
 | `sourceUpdatedAt` | `null`; the interface provides no source update timestamp. |
@@ -103,7 +103,7 @@ Catch `IpLookupError` and inspect `code`; do not depend on message wording.
 | `CANCELLED`, `TIMEOUT` | Caller cancellation or client deadline. |
 | `HTTP_ERROR` | Unsuccessful HTTP status, including redirects; inspect `statusCode`. |
 | `API_ERROR` | Service envelope reports failure; inspect `statusCode` and `apiCode`. |
-| `INVALID_RESPONSE` | Invalid UTF-8, JSON, envelope, source status or known-field types. |
+| `INVALID_RESPONSE` | Invalid UTF-8, JSON, envelope, source status or known-field types, or an IP that differs from the explicit query. |
 | `RESPONSE_LIMIT` | Response exceeds the configured byte limit. |
 | `NETWORK_ERROR` | Connection or body-reading failure. |
 

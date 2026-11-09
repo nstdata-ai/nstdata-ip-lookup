@@ -15,6 +15,13 @@ const stringFields = ['continent', 'continentCode', 'country', 'countryCode', 'r
 const numberFields = ['lat', 'lon', 'offset'];
 const booleanFields = ['mobile', 'proxy', 'hosting'];
 
+function canonicalIp(ip) {
+    if (isIP(ip) !== 6) return ip;
+    const [address, zone] = ip.split('%');
+    const canonical = new URL(`http://[${address}]/`).hostname;
+    return zone === undefined ? canonical : `${canonical}%${zone}`;
+}
+
 function optionsObject(options) {
     if (options === null || typeof options !== 'object' || Array.isArray(options)) throw new IpLookupError('INVALID_CONFIG');
     return options;
@@ -67,7 +74,8 @@ export async function lookupIp(ip, options = {}) {
         if (!envelope || typeof envelope.err !== 'boolean' || typeof envelope.code !== 'number' || !Number.isFinite(envelope.code)) throw new IpLookupError('INVALID_RESPONSE');
         if (envelope.err || envelope.code !== 200) throw new IpLookupError('API_ERROR', { statusCode: response.status, apiCode: envelope.code });
         const data = envelope.data;
-        if (!data || data.status !== 'success' || typeof data.query !== 'string' || !isIP(data.query)) throw new IpLookupError('INVALID_RESPONSE');
+        if (!data || data.status !== 'success' || typeof data.query !== 'string' || !isIP(data.query) ||
+            (ip !== undefined && canonicalIp(data.query) !== canonicalIp(ip))) throw new IpLookupError('INVALID_RESPONSE');
         const information = { query: data.query };
         for (const [fields, type] of [[stringFields, 'string'], [numberFields, 'number'], [booleanFields, 'boolean']]) {
             for (const field of fields) {

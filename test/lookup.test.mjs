@@ -54,6 +54,37 @@ test('IPv6 is encoded once and current endpoint omits the target', async () => {
     }
 });
 
+test('explicit queries reject another IP and never cache the mismatched result', async () => {
+    for (const [requestedIp, returnedIp] of [['1.1.1.1', '8.8.8.8'], ['2001:db8::1', '2001:db8::2']]) {
+        let calls = 0;
+        const client = createIpLookup({ cacheTtlMs: 60000, fetch: async () => {
+            calls++;
+            return new Response(JSON.stringify(envelope({ ...valid, query: calls === 1 ? returnedIp : requestedIp })));
+        } });
+        await assert.rejects(client.lookup(requestedIp), { code: 'INVALID_RESPONSE' });
+        const recovered = await client.lookup(requestedIp);
+        assert.equal(recovered.information.query, requestedIp);
+        assert.equal(recovered.cached, false);
+        assert.equal((await client.lookup(requestedIp)).cached, true);
+        assert.equal(calls, 2);
+    }
+});
+
+test('equivalent IPv6 spellings match without rewriting the returned information', async () => {
+    for (const [requestedIp, returnedIp] of [
+        ['2001:0DB8:0:0:0:0:0:1', '2001:db8::1'],
+        ['::ffff:192.0.2.1', '::ffff:c000:201'],
+        ['fe80:0:0:0:0:0:0:1%eth0', 'fe80::1%eth0'],
+    ]) {
+        const result = await lookupIp(requestedIp, { fetch: fixture(envelope({ ...valid, query: returnedIp })) });
+        assert.equal(result.requestedIp, requestedIp);
+        assert.equal(result.information.query, returnedIp);
+    }
+    await assert.rejects(lookupIp('fe80::1%eth0', {
+        fetch: fixture(envelope({ ...valid, query: 'fe80::1%eth1' })),
+    }), { code: 'INVALID_RESPONSE' });
+});
+
 test('retrieval time is recorded without inventing a source update time', async () => {
     const before = Date.now();
     const result = await lookupIp('1.1.1.1', { fetch: fixture(envelope(valid)) });

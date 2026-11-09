@@ -39,7 +39,7 @@ npx --no-install nstdata-ip-lookup --ip 1.1.1.1
 |---|---|
 | `source` | `nstdata-public-ip-lookup`：标识 Nstdata 接口，不标识下游数据集。 |
 | `requestedIp` | 原始输入字符串；查询当前 IP 时为 `null`。 |
-| `information.query` | 服务返回的有效 IP。 |
+| `information.query` | 服务返回的有效 IP；指定 IP 查询必须与该地址一致，接受等价 IPv6 写法。 |
 | `information` 可选字段 | 只保留响应中存在的字段；缺字段省略，`null`、`false`、`0` 保持原值。 |
 | `retrievedAt` | 客户端读取并校验响应后的 UTC 时间；缓存命中时不更新。 |
 | `sourceUpdatedAt` | `null`；接口未提供源数据更新时间。 |
@@ -103,7 +103,7 @@ client.clearCache();
 | `CANCELLED`、`TIMEOUT` | 调用方取消或客户端期限到达。 |
 | `HTTP_ERROR` | HTTP状态失败，含跳转；查看 `statusCode`。 |
 | `API_ERROR` | 服务外层包装报告失败；查看 `statusCode`、`apiCode`。 |
-| `INVALID_RESPONSE` | UTF-8、JSON、外层包装、源状态或已知字段类型不合法。 |
+| `INVALID_RESPONSE` | UTF-8、JSON、外层包装、源状态或已知字段类型不合法，或返回 IP 与指定查询地址不符。 |
 | `RESPONSE_LIMIT` | 响应超过字节上限。 |
 | `NETWORK_ERROR` | 连接或正文读取失败。 |
 
