@@ -18,6 +18,18 @@ const environment = { can_admins_bypass: false,
     deployment_branch_policy: { custom_branch_policies: true, protected_branches: false } };
 const policies = { total_count: 1, branch_policies: [{ name: 'main', type: 'branch' }] };
 
+test('publish reruns download the artifact ID retained from the successful package job', () => {
+    const workflow = fs.readFileSync(new URL('../.github/workflows/release.yml', import.meta.url), 'utf8');
+    const [packageJob, publishJob] = workflow.split('\n  package:\n')[1].split('\n  publish:\n');
+    const upload = packageJob.split(/\n      - /).find(step => step.includes('uses: actions/upload-artifact@'));
+    const download = publishJob.split(/\n      - /).find(step => step.includes('uses: actions/download-artifact@'));
+    assert.match(upload, /^id: upload\n/);
+    assert.match(packageJob, /artifact-id: \$\{\{ steps\.upload\.outputs\.artifact-id \}\}/);
+    assert.match(download, /artifact-ids: \$\{\{ needs\.package\.outputs\.artifact-id \}\}/);
+    assert.doesNotMatch(download, /\n\s+name:/);
+    assert.match(publishJob, /RELEASE_MANIFEST_SHA256: \$\{\{ needs\.package\.outputs\.manifest-sha256 \}\}/);
+});
+
 test('release identity requires a manually dispatched reviewed main commit and stable matching version', () => {
     validateSource(env, pkg);
     for (const [key, value] of Object.entries({ GITHUB_EVENT_NAME: 'push', GITHUB_REPOSITORY: 'other/nstdata-ip-lookup', GITHUB_REF: 'refs/heads/feature',
