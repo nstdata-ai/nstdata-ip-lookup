@@ -193,6 +193,24 @@ test('input and pre-cancellation fail without calls', async () => {
     await assert.rejects(lookupIp('1.1.1.1', { fetch, signal: AbortSignal.abort() }), { code: 'CANCELLED' });
 });
 
+test('base URLs reject empty query and fragment delimiters before requests', async () => {
+    let calls = 0;
+    const fetch = async () => { calls++; return new Response(JSON.stringify(envelope(valid))); };
+    for (const baseURL of ['https://lookup.invalid/prefix?', 'https://lookup.invalid/prefix#',
+        'https://lookup.invalid/prefix/?', 'https://lookup.invalid/prefix/#',
+        'https://lookup.invalid/prefix?query=value', 'https://lookup.invalid/prefix#fragment']) {
+        await assert.rejects(lookupIp('1.1.1.1', { baseURL, fetch }), { code: 'INVALID_CONFIG' });
+    }
+    assert.equal(calls, 0);
+    for (const prefix of ['prefix%3F', 'prefix%23']) {
+        await lookupIp('1.1.1.1', { baseURL: `https://lookup.invalid/${prefix}/`, fetch: async (url, init) => {
+            assert.equal(url.pathname, `/${prefix}/api/v2/public/utility/ip-lookup`);
+            assert.equal(url.searchParams.get('ipOrHost'), '1.1.1.1');
+            return fixture(envelope(valid))(url, init);
+        } });
+    }
+});
+
 test('malformed option containers fail consistently at all public boundaries without requests', async t => {
     let calls = 0;
     t.mock.method(globalThis, 'fetch', async () => {

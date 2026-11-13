@@ -21,15 +21,15 @@ Node.js 22.18+ in the 22.x line, or Node.js 24.x, with npm on PATH.
 Run from any directory; no project installation is required:
 
 ```sh
-npx --yes --package @nstdata-ai/ip-lookup@1.0.0 nstdata-ip-lookup --ip 1.1.1.1
-npx --yes --package @nstdata-ai/ip-lookup@1.0.0 nstdata-ip-lookup --current
+npx --yes --package @nstdata-ai/ip-lookup@latest nstdata-ip-lookup --ip 1.1.1.1
+npx --yes --package @nstdata-ai/ip-lookup@latest nstdata-ip-lookup --current
 ```
 
 Inspect usage or the version without submitting an IP query:
 
 ```sh
-npx --yes --package @nstdata-ai/ip-lookup@1.0.0 nstdata-ip-lookup --help
-npx --yes --package @nstdata-ai/ip-lookup@1.0.0 nstdata-ip-lookup --version
+npx --yes --package @nstdata-ai/ip-lookup@latest nstdata-ip-lookup --help
+npx --yes --package @nstdata-ai/ip-lookup@latest nstdata-ip-lookup --version
 ```
 
 `npx` may download the package. The CLI's `--help` and `--version` do not contact the lookup service.

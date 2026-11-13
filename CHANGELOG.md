@@ -1,5 +1,10 @@
 # Changelog
 
+## 1.0.1
+
+- Reject API base URLs with empty query or fragment delimiters before sending a request.
+- Use the public latest version in one-shot CLI installation examples.
+
 ## 1.0.0
 
 - Reject responses for another IP before returning or caching the result; accept equivalent IPv6 spellings.

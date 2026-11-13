@@ -34,7 +34,7 @@ export async function lookupIp(ip, options = {}) {
     if (ip !== undefined && (typeof ip !== 'string' || !isIP(ip))) throw new IpLookupError('INVALID_IP');
     let base;
     try { base = new URL(baseURL); } catch { throw new IpLookupError('INVALID_CONFIG'); }
-    if (!['https:', 'http:'].includes(base.protocol) || base.username || base.password || base.search || base.hash ||
+    if (!['https:', 'http:'].includes(base.protocol) || base.username || base.password || base.href.includes('?') || base.href.includes('#') ||
         !Number.isInteger(timeoutMs) || timeoutMs < 1 || timeoutMs > 2147483647 ||
         !Number.isSafeInteger(maxResponseBytes) || maxResponseBytes < 1 || typeof request !== 'function' ||
         (signal !== undefined && !(signal instanceof AbortSignal))) {
