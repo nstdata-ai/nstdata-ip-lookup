@@ -21,15 +21,15 @@
 可从任意目录执行，无需先在项目中安装：
 
 ```sh
-npx --yes --package @nstdata-ai/ip-lookup@1.0.0 nstdata-ip-lookup --ip 1.1.1.1
-npx --yes --package @nstdata-ai/ip-lookup@1.0.0 nstdata-ip-lookup --current
+npx --yes --package @nstdata-ai/ip-lookup@latest nstdata-ip-lookup --ip 1.1.1.1
+npx --yes --package @nstdata-ai/ip-lookup@latest nstdata-ip-lookup --current
 ```
 
 查看用法或版本，不提交 IP 查询：
 
 ```sh
-npx --yes --package @nstdata-ai/ip-lookup@1.0.0 nstdata-ip-lookup --help
-npx --yes --package @nstdata-ai/ip-lookup@1.0.0 nstdata-ip-lookup --version
+npx --yes --package @nstdata-ai/ip-lookup@latest nstdata-ip-lookup --help
+npx --yes --package @nstdata-ai/ip-lookup@latest nstdata-ip-lookup --version
 ```
 
 `npx` 可能下载软件包。CLI 的 `--help` 和 `--version` 不访问查询服务。

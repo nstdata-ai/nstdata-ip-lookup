@@ -81,7 +81,7 @@ net.Socket.prototype.connect = function (...args) {
                 const runEnv = { ...localEnv };
                 if (oneShot) {
                     assert.deepEqual(command.slice(0, 5), ['npx', '--yes', '--package',
-                        `${manifest.name}@${manifest.version}`, 'nstdata-ip-lookup']);
+                        `${manifest.name}@latest`, 'nstdata-ip-lookup']);
                     runEnv.npm_config_cache = join(temp, 'one-shot-cache-' + checked);
                 } else if (command[0] === 'npm') {
                     assert.deepEqual(command, globalInstall ? ['npm', 'install', '--global', manifest.name]
